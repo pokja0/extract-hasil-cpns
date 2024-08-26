@@ -1,0 +1,85 @@
+---
+title: "Deskripsi Hasil CPNS 2021"
+author: "Kemenag"
+format: pdf
+editor: visual
+---
+
+## Sumber Data
+
+Data yang digunakan pada dokumen ini berasal dari publikasi Kemenag dengan judul "PENGUMUMAN HASIL AKHIR CPNS KEMENAG TAHUN 2021 TAYANG.pdf". Dokumen pdf tersebut di *extract* menggunakan paket pdfplumber. Untuk *source code extract* sebagaimana dimaksud dalam dilihat pada laman berikut: <https://github.com/pokja0/extract-hasil-cpns>.
+
+## Raw Data
+
+Data terdiri dari 3.364 baris dengan jumlah 18 kolom Dengan rincian kolom sebagai berikut:
+```{r}
+#| echo: false
+#| message: false
+#| warning: false
+library(dplyr)
+library(gt)
+
+integrasi_cpns <- openxlsx::read.xlsx("hasil/kemenag-500.xlsx")
+integrasi_cpns <- integrasi_cpns %>%
+  select(-X1)
+colnames(integrasi_cpns)
+```
+
+Agar tabel dapat menjadi lebih rapi hanya ditampilkan dari kolom 1 hingga 13 saja sebagaimana berikut:
+
+```{r}
+#| echo: false
+#| message: false
+#| warning: false
+
+integrasi_cpns <- integrasi_cpns %>%
+  mutate(across(c(4:12,18), as.numeric))
+
+```
+
+You can add options to executable code like this
+
+```{r}
+#| echo: false
+#| message: false
+#| warning: false
+
+tabel1 <- integrasi_cpns %>%
+  select(1:6) %>%
+  head(4)
+
+gt(tabel1) %>%
+  tab_header(
+    title = "Hasil Integrasi SKD dan SKD",
+    subtitle = "Kolom 1-6")
+  # ) %>%
+  # cols_width(
+  #   everything() ~ px(100)
+  # )
+```
+
+```{r}
+#| echo: false
+#| message: false
+#| warning: false
+
+tabel2 <- integrasi_cpns %>%
+  select(7:13) %>%
+  head(4)
+gt(tabel2) %>%
+  tab_header(
+    title = "Hasil Integrasi SKD dan SKD",
+    subtitle = "Lanjutan 1: Kolom 7-13"
+  ) %>%
+  cols_width(
+    everything() ~ px(100)
+  )
+```
+
+```{r}
+#| echo: false
+#| message: false
+#| warning: false
+
+```
+The `echo: false` option disables the printing of code (only output is displayed).
