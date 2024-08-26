@@ -11,7 +11,8 @@ Data yang digunakan pada dokumen ini berasal dari publikasi Kemenag dengan judul
 
 ## Raw Data
 
-Data terdiri dari 3.364 baris dengan jumlah 18 kolom Dengan rincian kolom sebagai berikut:
+Data terdiri dari 3.364 baris dengan jumlah 19 kolom Dengan rincian kolom sebagai berikut:
+
 ```{r}
 #| echo: false
 #| message: false
@@ -19,7 +20,7 @@ Data terdiri dari 3.364 baris dengan jumlah 18 kolom Dengan rincian kolom sebaga
 library(dplyr)
 library(gt)
 
-integrasi_cpns <- openxlsx::read.xlsx("hasil/kemenag-500.xlsx")
+integrasi_cpns <- openxlsx::read.xlsx("hasil/kemenag.xlsx")
 integrasi_cpns <- integrasi_cpns %>%
   select(-X1)
 colnames(integrasi_cpns)
@@ -37,8 +38,6 @@ integrasi_cpns <- integrasi_cpns %>%
 
 ```
 
-You can add options to executable code like this
-
 ```{r}
 #| echo: false
 #| message: false
@@ -51,7 +50,19 @@ tabel1 <- integrasi_cpns %>%
 gt(tabel1) %>%
   tab_header(
     title = "Hasil Integrasi SKD dan SKD",
-    subtitle = "Kolom 1-6")
+    subtitle = "Kolom 1-6")  %>%
+  tab_options(
+    table.border.top.color = "black",      # Garis di atas tabel
+    table.border.bottom.color = "black",   # Garis di bawah tabel
+    column_labels.border.top.color = "black", # Garis atas label kolom
+    column_labels.border.bottom.color = "black", # Garis bawah label kolom
+    table_body.border.top.color = "black", # Garis di atas isi tabel
+    table_body.border.bottom.color = "black", # Garis di bawah isi tabel
+    column_labels.vlines.style = "solid",  # Gaya garis vertikal di label kolom
+    table_body.vlines.style = "solid",     # Gaya garis vertikal di isi tabel
+    column_labels.vlines.color = "grey",   # Warna garis vertikal di label kolom
+    table_body.vlines.color = "grey"       # Warna garis vertikal di isi tabel
+  )
   # ) %>%
   # cols_width(
   #   everything() ~ px(100)
@@ -73,7 +84,176 @@ gt(tabel2) %>%
   ) %>%
   cols_width(
     everything() ~ px(100)
+  )  %>%
+  tab_options(
+    table.border.top.color = "black",      # Garis di atas tabel
+    table.border.bottom.color = "black",   # Garis di bawah tabel
+    column_labels.border.top.color = "black", # Garis atas label kolom
+    column_labels.border.bottom.color = "black", # Garis bawah label kolom
+    table_body.border.top.color = "black", # Garis di atas isi tabel
+    table_body.border.bottom.color = "black", # Garis di bawah isi tabel
+    column_labels.vlines.style = "solid",  # Gaya garis vertikal di label kolom
+    table_body.vlines.style = "solid",     # Gaya garis vertikal di isi tabel
+    column_labels.vlines.color = "grey",   # Warna garis vertikal di label kolom
+    table_body.vlines.color = "grey"       # Warna garis vertikal di isi tabel
   )
+```
+
+## Berapa Nilai SKD Peserta Tes dengan keterangan P/L?
+
+Penjelasan terhadap kode pada kolom keterangan Hasil Integrasi Nilai SKD-SKB CPNS Kementerian Agama sebagaimana dalam lampiran pengumuman ini adalah:
+
+1.  Kode “P/L” adalah peserta yang dinyatakan LULUS akhir seleksi CPNS;
+
+2.  Kode “P/L-1” adalah peserta yang dinyatakan LULUS akhir seleksi CPNS dikarenakan pengisian formasi antar jenis formasi;
+
+3.  Kode “P/TL” adalah peserta yang dinyatakan TIDAK LULUS akhir seleksi CPNS
+
+4.  Kode “P/TH” adalah peserta yang TIDAK HADIR pada salah satu atau keseluruhan tahapan tes.
+
+Berikut statistik deskriptif Nilai SKD Peserta P/L:
+
+```{r}
+#| echo: false
+#| message: false
+#| warning: false
+
+integrasi_cpns_stat_desk <- integrasi_cpns %>%
+  select(Total.SKD, Keterangan) %>%
+  filter(Keterangan == "P/L") 
+
+desk <- integrasi_cpns_stat_desk %>%
+  group_by(Keterangan) %>%
+  summarise(Rerata = round(mean(Total.SKD),2),
+            Median = median(Total.SKD),
+            Min = min(Total.SKD),
+            Max = max(Total.SKD))
+gt(desk) %>%
+  tab_header(
+    title = "Statistik Deskriptif Peserta P/L"
+  )  %>%
+  tab_options(
+    table.border.top.color = "black",      # Garis di atas tabel
+    table.border.bottom.color = "black",   # Garis di bawah tabel
+    column_labels.border.top.color = "black", # Garis atas label kolom
+    column_labels.border.bottom.color = "black", # Garis bawah label kolom
+    table_body.border.top.color = "black", # Garis di atas isi tabel
+    table_body.border.bottom.color = "black", # Garis di bawah isi tabel
+    column_labels.vlines.style = "solid",  # Gaya garis vertikal di label kolom
+    table_body.vlines.style = "solid",     # Gaya garis vertikal di isi tabel
+    column_labels.vlines.color = "grey",   # Warna garis vertikal di label kolom
+    table_body.vlines.color = "grey"       # Warna garis vertikal di isi tabel
+  )
+
+```
+
+Secara umum nilai rata-rata untuk lulus CPNS Kemenag adalah 411 atau dengan median 413. Namun jika diperhatikan antara nilai minimum 305 dan maksimal 486 memiliki gap yang jauh. Selanjutnya dibuatkan grup untuk jenis formasi:
+
+```{r}
+#| echo: false
+#| message: false
+#| warning: false
+
+integrasi_cpns_stat_desk <- integrasi_cpns %>%
+  select(Total.SKD, Keterangan, Jenis.Formasi) %>%
+  filter(Keterangan == "P/L") 
+
+desk <- integrasi_cpns_stat_desk %>%
+  group_by(Jenis.Formasi) %>%
+  summarise(Rerata = round(mean(Total.SKD),2),
+            Median = median(Total.SKD),
+            Min = min(Total.SKD),
+            Max = max(Total.SKD)) %>%
+  arrange(desc(Rerata))
+
+gt(desk) %>%
+  tab_header(
+    title = "Statistik Deskriptif Peserta P/L Berdasarkan Jenis Formasi"
+  )  %>%
+  tab_options(
+    table.border.top.color = "black",      # Garis di atas tabel
+    table.border.bottom.color = "black",   # Garis di bawah tabel
+    column_labels.border.top.color = "black", # Garis atas label kolom
+    column_labels.border.bottom.color = "black", # Garis bawah label kolom
+    table_body.border.top.color = "black", # Garis di atas isi tabel
+    table_body.border.bottom.color = "black", # Garis di bawah isi tabel
+    column_labels.vlines.style = "solid",  # Gaya garis vertikal di label kolom
+    table_body.vlines.style = "solid",     # Gaya garis vertikal di isi tabel
+    column_labels.vlines.color = "grey",   # Warna garis vertikal di label kolom
+    table_body.vlines.color = "grey"       # Warna garis vertikal di isi tabel
+  )
+
+```
+
+Berikut deskripsi untuk kolom Jenis.Formasi:
+
+1.  Kode “UMUM” adalah formasi yang dapat dilamar oleh pelamar umum;
+
+2.  Kode “LULUSAN” adalah Putra/Putri Lulusan Terbaik Berpredikat "Dengan Pujian"/Cumlaude;
+
+3.  Kode “PENYANDANG” adalah peserta Penyandang Disabilitas;
+
+4.  Kode “PUTRA” adalah Putra/Putri Papua dan Papua Barat
+
+Ternyata secara rata-rata, nilai pelamar UMUM lebih tinggi dari LULUSAN TERBAIK.
+
+```{r}
+#| echo: false
+#| message: false
+#| warning: false
+library(ggplot2)
+integrasi_cpns_stat_desk <- integrasi_cpns %>%
+  select(Total.SKD, Keterangan, Jenis.Formasi) %>%
+  filter(Keterangan == "P/L") 
+
+ggplot(integrasi_cpns_stat_desk, aes(x = Total.SKD)) +
+  geom_histogram(binwidth = 10, fill = "skyblue", color = "black", alpha = 0.7) +
+  facet_wrap(~ Jenis.Formasi, scales = "free_y") +
+  labs(
+    title = "Distribusi Total Nilai SKD Perserta P/L berdasarkan Jenis Formasi",
+    x = "Total SKD",
+    y = "Frekuensi"
+  ) +
+  theme_minimal()
+
+```
+## Lokasi Formasi
+
+Selanjutnya akan dipetakan Lokasi Formasi dengan Rerata Total SKD Tertinggi dan Terendah 
+
+```{r}
+#| echo: false
+#| message: false
+#| warning: false
+# Menghitung korelasi Spearman
+lokasi_formasi <- integrasi_cpns %>%
+  select(Total.SKD, Keterangan, Jenis.Formasi, Lokasi.Formasi) %>%
+  filter(Keterangan == "P/L") 
+
+lokasi_formasi <- lokasi_formasi%>%
+  group_by(Keterangan, Jenis.Formasi, Lokasi.Formasi) %>%
+  summarise(Rerata = round(mean(Total.SKD),2),
+            Median = median(Total.SKD),
+            Min = min(Total.SKD),
+            Max = max(Total.SKD)) %>%
+  arrange(desc(Rerata), Lokasi.Formasi, Keterangan, Jenis.Formasi)
+
+
+# Mengurutkan data berdasarkan 'Rerata' dan memilih 10 teratas untuk setiap 'Jenis.Formasi'
+top_10_umum <- lokasi_formasi %>%
+  filter(Jenis.Formasi == "UMUM") %>%
+  slice_max(order_by = Rerata, n = 15) %>%
+  ungroup() %>%
+  arrange(Jenis.Formasi, desc(Rerata))
+
+
+# Mengurutkan data berdasarkan 'Rerata' dan memilih 10 teratas untuk setiap 'Jenis.Formasi'
+end_10_umum <- lokasi_formasi %>%
+  filter(Jenis.Formasi == "UMUM") %>%
+  slice_min(order_by = Rerata, n = 15) %>%
+  ungroup() %>%
+  arrange(Jenis.Formasi, Rerata)
+
 ```
 
 ```{r}
@@ -81,5 +261,281 @@ gt(tabel2) %>%
 #| message: false
 #| warning: false
 
+
+gt(top_10_umum) %>%
+  tab_header(
+    title = "15 Lokasi Formasi dengan Skor SKD P/L Tertinggi"
+  )  %>%  cols_width(
+    everything() ~ px(100))  %>%
+  tab_options(
+    table.border.top.color = "black",      # Garis di atas tabel
+    table.border.bottom.color = "black",   # Garis di bawah tabel
+    column_labels.border.top.color = "black", # Garis atas label kolom
+    column_labels.border.bottom.color = "black", # Garis bawah label kolom
+    table_body.border.top.color = "black", # Garis di atas isi tabel
+    table_body.border.bottom.color = "black", # Garis di bawah isi tabel
+    column_labels.vlines.style = "solid",  # Gaya garis vertikal di label kolom
+    table_body.vlines.style = "solid",     # Gaya garis vertikal di isi tabel
+    column_labels.vlines.color = "grey",   # Warna garis vertikal di label kolom
+    table_body.vlines.color = "grey"       # Warna garis vertikal di isi tabel
+  )
+
 ```
-The `echo: false` option disables the printing of code (only output is displayed).
+
+INSPEKTORAT JENDRAL, BADAN PENYELENGGARA JAMINAN PRODUK HALAL, dan KANWIL KEMENTERIAN AGAMA PROVINSI KALIMANTAN TIMUR menjadi Lokasi Formasi dengan Nilai Tertinggi.
+
+
+```{r}
+#| echo: false
+#| message: false
+#| warning: false
+
+
+gt(end_10_umum) %>%
+  tab_header(
+    title = "15 Lokasi Formasi dengan Skor SKD P/L Terendah"
+  )  %>%  cols_width(
+    everything() ~ px(100))  %>%
+  tab_options(
+    table.border.top.color = "black",      # Garis di atas tabel
+    table.border.bottom.color = "black",   # Garis di bawah tabel
+    column_labels.border.top.color = "black", # Garis atas label kolom
+    column_labels.border.bottom.color = "black", # Garis bawah label kolom
+    table_body.border.top.color = "black", # Garis di atas isi tabel
+    table_body.border.bottom.color = "black", # Garis di bawah isi tabel
+    column_labels.vlines.style = "solid",  # Gaya garis vertikal di label kolom
+    table_body.vlines.style = "solid",     # Gaya garis vertikal di isi tabel
+    column_labels.vlines.color = "grey",   # Warna garis vertikal di label kolom
+    table_body.vlines.color = "grey"       # Warna garis vertikal di isi tabel
+  )
+
+```
+
+Adapun IAIN AMBON, 	IAKN KUPANG, dan STAKATN PONTIANAK menjadi Lokasi Formasi dengan Nilai terendah
+
+Menariknya  Lokasi Formasi tertinggi mayoritas berada di wilayah jawa, sedangkan Lokasi Formasi terendah berada di wilayah timur Indonesia
+
+## Jabatan Formasi
+Selain melihat nilai tertinggi dan terendah berdasarkan Lokasi Formasi, berikut jika dilihat berdasarkan Jabatan Formasi:
+```{r}
+#| echo: false
+#| message: false
+#| warning: false
+lokasi_formasi <- integrasi_cpns %>%
+  select(Total.SKD, Keterangan, Jenis.Formasi, Jabatan) %>%
+  filter(Keterangan == "P/L") 
+
+lokasi_formasi <- lokasi_formasi%>%
+  group_by(Keterangan, Jenis.Formasi, Jabatan) %>%
+  summarise(Rerata = round(mean(Total.SKD),2),
+            Median = median(Total.SKD),
+            Min = min(Total.SKD),
+            Max = max(Total.SKD)) %>%
+  arrange(desc(Rerata), Jabatan, Keterangan, Jenis.Formasi)
+
+
+# Mengurutkan data berdasarkan 'Rerata' dan memilih 10 teratas untuk setiap 'Jenis.Formasi'
+top_10_umum <- lokasi_formasi %>%
+  filter(Jenis.Formasi == "UMUM") %>%
+  slice_max(order_by = Rerata, n = 15) %>%
+  ungroup() %>%
+  arrange(Jenis.Formasi, desc(Rerata))
+
+
+# Mengurutkan data berdasarkan 'Rerata' dan memilih 10 teratas untuk setiap 'Jenis.Formasi'
+end_10_umum <- lokasi_formasi %>%
+  filter(Jenis.Formasi == "UMUM") %>%
+  slice_min(order_by = Rerata, n = 15) %>%
+  ungroup() %>%
+  arrange(Jenis.Formasi, Rerata)
+
+
+```
+
+```{r}
+#| echo: false
+#| message: false
+#| warning: false
+
+
+gt(top_10_umum) %>%
+  tab_header(
+    title = "15 Jabatan dengan Skor SKD P/L Tertinggi"
+  ) %>%  cols_width(
+    everything() ~ px(100))
+
+```
+
+PENGELOLA PELAKSANAAN PROGRAM DAN ANGGARAN, PENGELOLA PENGADUAN PUBLIK, dan ANALIS PENYELIA HALAL menjadi Jabatan dengan Nilai SKD Tertinggi. Jabatan ini dapat di daftar oleh Pendidikan (4100273) D-III PERBANKAN SYARIAH / (4400205) D-III AKUNTANSI / (4400206) D-III MANAJEMEN / (4401076) D-III MANAJEMEN KEUANGAN / (4413000) D-III ADMINISTRASI / (4417093) D-III TEKNIK INFORMATIKA / (4450070) D-III SISTEM INFORMASI / (4100558) D-III TEKNIK KOMPUTER / (4400173) D-III KOMUNIKASI / (4405012) D-III HUBUNGAN MASYARAKAT / (4417093) D-III TEKNIK INFORMATIKA / (9930045) D-III KOMUNIKASI MASA / / 5100208) S-1 MANAJEMEN / (5100452) S-1 MANAJEMEN BISNIS ISLAM / (5101228) S-1 TEKNIK INDUSTRI / (5101761) S-1 GIZI / (5102391) S-1 TEKNIK PANGAN / (5104400) S-1 FARMASI / (5104911) S-1 ILMU GIZI / (5190089) S-1 TEKNOLOGI PANGAN.
+
+
+```{r}
+#| echo: false
+#| message: false
+#| warning: false
+
+
+gt(end_10_umum) %>%
+  tab_header(
+    title = "15 Jabatan dengan Skor SKD P/L Terendah"
+  ) %>%  cols_width(
+    everything() ~ px(100)
+  )
+
+```
+
+Jabatan PENGELOLA DATA PENCAIRAN DANA, PENGELOLA KEPEGAWAIAN, dan PENGELOLA DATA SARANA DAN PRASARANA PENDIDIKAN menjadi Jabatan dengan Nilai SKD Tertinggi. Jabatan ini dapat di daftar oleh Pendidikan (4100273) D-III PERBANKAN SYARIAH / (4400205) D-III AKUNTANSI / (4400206) D-III MANAJEMEN / (4401076) D-III MANAJEMEN KEUANGAN / (4413000) D-III ADMINISTRASI / (4417093) D-III TEKNIK INFORMATIKA / (4450070) D-III SISTEM INFORMASI / (4100472) D-III ADMINISTRASI NEGARA / (4400206) D-III MANAJEMEN / (4450080) D-III MANAJEMEN SUMBER DAYA MANUSIA / (4470137) D-III ADMINISTRASI PUBLIK / (4400206) D-III MANAJEMEN / (4413000) D-III ADMINISTRASI / (4417093) D-III TEKNIK INFORMATIKA / (4450070) D-III SISTEM INFORMASI.
+
+## Bagaimana dengan Peserta dari (5151001) S-1 STATISTIKA atau (5151000) S-1 STATISTIK
+
+Sayangnya tidak terdapat Peserta dari (5151001) S-1 STATISTIKA atau (5151000) S-1 STATISTIK pada seleksi CPNS Kemenag pada tahun 2021. Terdapat beberapa kemungkinan, misal tidak ada alumni Statistika / Statistik mendaftar pada seleksi CPNS Kemenag pada tahun 2021 atau kalah bersaing dengan (5101050) S-1 MATEMATIKA / (5100144) S-1 SISTEM INFORMASI / 5100170) S-1 AKUNTANSI atau lainnya.
+
+## Apakah IPK berkolerasi positif dengan Nilai SKD?
+
+```{r}
+#| echo: false
+#| message: false
+#| warning: false
+# Menghitung korelasi Spearman
+correlation_spearman <- cor.test(integrasi_cpns$IPK, integrasi_cpns$Total.SKD, method = "spearman")
+print(correlation_spearman)
+
+```
+
+-   Korelasi: Meskipun p-value menunjukkan bahwa korelasi mungkin signifikan, nilai rho yang sangat kecil (0.055) menunjukkan bahwa hubungan antara variabel masih sangat lemah secara praktis. Korelasi yang signifikan tetapi sangat kecil mungkin tidak memiliki dampak yang berarti dalam konteks aplikasi praktis.
+
+-   Signifikansi Statistik vs. Praktik: Meskipun hasil uji menunjukkan bahwa korelasi mungkin signifikan secara statistik, nilai korelasi yang rendah menunjukkan bahwa hubungan antara variabel tersebut tidak kuat dan mungkin tidak relevan secara praktis.
+
+Hasil uji Spearman menunjukkan bahwa meskipun ada bukti statistik bahwa mungkin ada hubungan monotonic antara IPK dan Skor.SKD, kekuatan hubungan tersebut sangat lemah. Ini berarti bahwa dalam praktiknya, variabel-variabel tersebut hampir tidak saling mempengaruhi berdasarkan urutan atau ranking mereka.
+
+```{r}
+#| echo: false
+#| message: false
+#| warning: false
+# Menghitung korelasi Spearman
+ggplot(integrasi_cpns, aes(x = IPK, y = Total.SKD, color = Keterangan)) +
+  geom_point(size = 2) +
+  geom_jitter(width = 0.2, height = 0.2, alpha = 0.5) +  # Menambahkan gangguan
+  geom_smooth(method = "lm", color = "blue") +
+  labs(title = "Scatterplot dengan Korelasi",
+       x = "IPK",
+       y = "SKOR SKD") +
+  theme_minimal()
+```
+Dapat terlihat antara titik-titik yang menghubungkan SKOR SKD dan IPK baik peserta yang lulus maupun tidak membentuk pola yang acak.
+
+## Apakah umur berpengaruh terhadap nilai SKD?
+
+```{r}
+#| echo: false
+#| message: false
+#| warning: false
+# Menghitung korelasi Spearman
+library(lubridate)
+
+tanggal_akhir <- as.Date("2021-07-01")
+
+umur <- integrasi_cpns %>%
+  select(Tanggal.Lahir, Total.SKD, Keterangan) %>%
+  mutate(
+    Tanggal.Lahir = dmy(Tanggal.Lahir), # Mengubah string menjadi objek tanggal
+    Tahun.Lahir = year(Tanggal.Lahir), # Mengambil tahun lahir
+    Umur = floor(as.numeric(difftime(tanggal_akhir, Tanggal.Lahir, units = "weeks")) / 52.25), # Menghitung umur
+    Generasi = case_when(
+      Tahun.Lahir >= 1997 ~ "Gen Z",
+      Tahun.Lahir <= 1996 ~ "Gen Y",
+      TRUE ~ "Unknown" # Jika tidak sesuai dengan kategori yang ada
+    )
+  ) %>%
+  filter(Keterangan %in% c("P/L", "P/L-1"))
+umur = umur %>%
+  count(Generasi)
+
+gt(umur) %>%
+  tab_header(
+    title = "Perbandingan Kelulusan Berdasarkan Generasi Umur"
+  )
+```
+
+Sekiar 1/5 dari peserta yang lolos merupakan gen Z. Lalu apakah yang termuda memiliki peluang yang lebih tinggi untuk lulus?
+
+```{r}
+#| echo: false
+#| message: false
+#| warning: false
+# Menghitung korelasi Spearman
+library(lubridate)
+
+# Tanggal referensi
+tanggal_akhir <- as.Date("2021-07-01")
+
+# Ubah Tanggal.Lahir menjadi format tanggal dan hitung umur
+df <- integrasi_cpns %>%
+  mutate(
+    Tanggal.Lahir = dmy(Tanggal.Lahir), # Ubah ke format tanggal
+    Umur = floor(as.numeric(difftime(tanggal_akhir, Tanggal.Lahir, units = "weeks")) / 52.25) # Hitung umur
+  )
+
+# Menghitung peluang untuk setiap kategori Jenis.Formasi
+peluang_lulus_per_kategori <- df %>%
+  group_by(Pendidikan, Instansi, Jabatan, Lokasi.Formasi, Jumlah.Formasi, Jenis.Formasi) %>%
+  summarise(
+    Umur.Terbaru = min(Umur),
+    Jumlah.Termuda = sum(Umur == Umur.Terbaru),
+    Jumlah.Termuda.Lulus = sum(Keterangan == "P/L" & Umur == Umur.Terbaru),
+    Peluang.Lulus = Jumlah.Termuda.Lulus / Jumlah.Termuda
+  ) %>%
+  ungroup()
+peluang_lulus_per_kategori$Jumlah.Termuda.Lulus <- as.character(peluang_lulus_per_kategori$Jumlah.Termuda.Lulus)
+
+peluang_lulus_per_kategori <- peluang_lulus_per_kategori %>%
+  count(Total = Jumlah.Termuda.Lulus)
+
+colnames(peluang_lulus_per_kategori) <- c("Termuda Lulus", "Total")
+
+
+gt(peluang_lulus_per_kategori) %>%
+  tab_header(
+    title = "Kelulusan Berdasarkan Umur Termuda"
+  )
+```
+
+Kadang terdapat anggapan "kamu masih muda, masih kuat belajar" atau "kamu baru lulus kuliah, masih fresh untuk belajar" yang pada intinya mengatakan yang lebih muda memiliki peluang lebih tinggi untuk lulus CPNS jika bersaing dengan yang lebih tua. Faktanya baik yang termuda maupun bukan memiliki peluang yang sama untuk lulus berdasarkan tabel di atas. Termuda Lolos kategori 0 menandakan "bukan yang termuda yang lulus" sebanyak 561 dari total grouping data yang ada.
+
+
+```{r}
+#| echo: false
+#| message: false
+#| warning: false
+# Menghitung korelasi Spearman
+
+tanggal_akhir <- as.Date("2021-07-01")
+
+umur <- integrasi_cpns %>%
+  select(Tanggal.Lahir, Total.SKD, Keterangan) %>%
+  mutate(
+    Tanggal.Lahir = dmy(Tanggal.Lahir), # Mengubah string menjadi objek tanggal
+    Tahun.Lahir = year(Tanggal.Lahir), # Mengambil tahun lahir
+    Umur = floor(as.numeric(difftime(tanggal_akhir, Tanggal.Lahir, units = "weeks")) / 52.25) # Menghitung umur
+  ) %>%
+  filter(Keterangan %in% c("P/L", "P/L-1"))
+
+ggplot(umur, aes(x = Umur)) + 
+  geom_histogram(binwidth = 1, fill = "skyblue", color = "black", alpha = 0.7) +
+  labs(
+    title = "Distribusi Umur Peserta Yang Lulus",
+    x = "Umur",
+    y = "Frekuensi"
+  ) +
+  theme_minimal()
+
+```
+
+Meski begitu, berdasarkan scatterplot di atas, frekuensi peserta yang lulus berada di umur 25-27 tahun.
+
+Sekian
+
+
+
+
+
